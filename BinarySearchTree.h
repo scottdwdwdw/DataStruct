@@ -40,11 +40,19 @@ namespace DATE_BASE
  		NodePtr tree_maxnum_rec(NodePtr position) const;  //查找最大元素，递归
  		NodePtr tree_successor(NodePtr position) const; //查找后继
  		NodePtr tree_predecessor(NodePtr position) const; //查找前驱
+ 		void tree_delete(NodePtr position); //删除节点
 
 
 		NodePtr& GetRoot() { return root; };
  	private:
  		NodePtr MakeNode(const T&value);
+ 		void DestoryNode(NodePtr node)
+ 		{
+ 			if(node)
+ 			{
+ 				delete node;
+ 			}
+ 		}
  		NodePtr root;  
 
  	};  //end of BinarySearchTree
@@ -245,6 +253,57 @@ namespace DATE_BASE
     {
     	if(position->right==NULL)return position;
     	return tree_maxnum_rec(position->right);
+    }
+
+    /*
+    *  分情况
+    *  1.无子女
+    */
+
+    template<typename T>
+    void BinarySearchTree<T>::tree_delete(NodePtr position)
+    {
+    	NodePtr del_temp=position;
+    	if((position->left==NULL)||(position->right==NULL))//最多有一个子女
+    	{
+			del_temp = position;
+    	}
+    	else
+    	{
+    		del_temp=tree_successor(position); //找到后继
+    	}
+    	NodePtr del_temp2=NULL;
+    	if(del_temp->left!=NULL) //左边有子女
+    	{
+			del_temp2=del_temp->left;
+    	}
+    	else
+    	{
+    		del_temp2=del_temp->right;
+    	}
+    	if(del_temp2!=NULL)  //有子女
+    	{
+    		del_temp2->parent=del_temp->parent;  //更改连接
+    	}
+    	if(del_temp->parent==NULL) //无子女
+    	{
+    		root=del_temp2;
+    	}
+    	else if(del_temp==del_temp->parent->left)//左孩子
+    	{
+			del_temp->parent->left = del_temp2;
+    	}
+    	else
+    	{
+			del_temp->parent->right = del_temp2;
+    	}
+
+    	if(del_temp!=position)
+    	{
+    		position->value=del_temp->value;
+    	}
+
+    	DestoryNode(del_temp);
     }
 
 
