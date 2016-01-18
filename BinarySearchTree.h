@@ -32,6 +32,16 @@ namespace DATE_BASE
  		void postorder_tree_walk(NodePtr position);  //后续遍历
  		void inorder_tree_walk_with_stack(NodePtr position);  //中序遍历，使用栈作为辅助,而不使用递归
  		void inorder_tree_walk_without_stack(NodePtr position); //中序遍历，使用普通方法,非递归，迭代
+ 		NodePtr tree_search(NodePtr position,const T&value) const; //查找
+ 		NodePtr tree_search_norec(NodePtr position,const T&value) const; //非递归,迭代
+ 		NodePtr tree_minnum(NodePtr position) const;  //查找最小元素
+ 		NodePtr tree_minnum_rec(NodePtr position) const; //查找最小元素，递归
+ 		NodePtr tree_maxnum(NodePtr position) const;  //查找最大元素
+ 		NodePtr tree_maxnum_rec(NodePtr position) const;  //查找最大元素，递归
+ 		NodePtr tree_successor(NodePtr position) const; //查找后继
+ 		NodePtr tree_predecessor(NodePtr position) const; //查找前驱
+
+
 		NodePtr& GetRoot() { return root; };
  	private:
  		NodePtr MakeNode(const T&value);
@@ -149,6 +159,93 @@ namespace DATE_BASE
     	}
     }
 
+    template<typename T>
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_search(NodePtr position,const T&key) const
+    {
+    	if(position==NULL||position->value==key)
+    	{
+    		return position;
+    	}
+    	if((position->value)<=key)return tree_search(position->right,key);
+    	else return tree_search(position->left,key);
+    }
+
+    template<typename T>
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_search_norec(NodePtr position,const T&key) const
+    {
+    	while((position!=NULL)&&(position->value!=key))
+    	{
+    		if(position->value<=key)position=position->right;
+    		else position=position->left;
+    	}
+
+    	return position;
+    }
+
+    template<typename T>
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_minnum(NodePtr position) const
+    {
+    	if(position->left==NULL)return position;
+    	return tree_minnum(position->left);
+    }
+
+    template<typename T>
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_maxnum(NodePtr position) const
+    {
+    	if(position->right==NULL)return position;
+    	return tree_maxnum(position->right);
+    }
+
+    template<typename T>
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_successor(NodePtr position) const
+    {
+    	if(position->right!=NULL)
+    	{
+    		return tree_minnum(position->right);
+    	}
+    	NodePtr temp=position;
+    	position=position->parent;
+    	while(position!=NULL&&position->right==temp) //找指定节点的父节点(后继)
+    	{
+    		temp=position;
+    		position=position->parent;
+    	}
+
+    	return position;
+
+    }
+
+    template<typename T>
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_predecessor(NodePtr position) const
+    {
+    	if(position->left!=NULL)
+    	{
+    		return tree_maxnum(position->left);  //此节点的前驱是该节点左孩子的最大值
+    	}
+    	NodePtr temp=position;  //左子树为空
+    	position=position->parent; 
+    	while(position!=NULL&&position->left!=temp)
+    	{
+    		temp=position;
+    		position=position->parent;
+    	}
+    	return position;
+
+    }
+
+    template<typename T>     //查找最小值，递归
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_minnum_rec(NodePtr position) const
+    {
+    	if(position->left==NULL)return position;
+    	return tree_minnum_rec(position->left);
+    }
+
+    template<typename T>
+    typename BinarySearchTree<T>::NodePtr BinarySearchTree<T>::tree_maxnum_rec(NodePtr position) const
+    {
+    	if(position->right==NULL)return position;
+    	return tree_maxnum_rec(position->right);
+    }
 
 
 } //end of DATA_BASE
