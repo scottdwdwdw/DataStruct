@@ -44,6 +44,9 @@ namespace DATE_BASE
 		{
 			return root;
 		}
+		void tree_delete(_NodePtr position);
+		_NodePtr RB_tree_successor(_NodePtr position) const;  //查找后继
+		_NodePtr tree_minnum(_NodePtr position) const;
 	private:
 		//私有成员函数
 		//旋转
@@ -52,6 +55,9 @@ namespace DATE_BASE
 		_NodePtr make_node(const T&key);     //构造节点
 		void destory_node(_NodePtr position);  //删除节点
 		void RB_insert_fixup(_NodePtr& position); //维护红黑树的性质
+		void RB_delete_fixup(_NodePtr& position);//
+		
+
 
 
 	}; //end of class
@@ -65,6 +71,15 @@ namespace DATE_BASE
 		temp->value=key;
 
 		return temp;
+	}
+
+	template<typename T>
+	void RB_Tree<T>::destory_node(_NodePtr position)
+	{
+		if(position)
+		{
+			free(position);
+		}
 	}
 
     //左旋转
@@ -139,14 +154,14 @@ namespace DATE_BASE
 	{
 		while(position->parent->COLOR==RED)  //这里能够保证根节点的颜色是黑色的
 		{
-			if(position->parent==position->parent->parent->left)
+			if(position->parent==position->parent->parent->left)  
 			{
 				if(position->parent->parent->right->COLOR==RED)  //case1,叔节点也是红色
 				{
 					position->parent->parent->right->COLOR=BLACK;
 					position->parent->COLOR=BLACK;
 					position->parent->parent->COLOR=RED;
-					position=position->parent->parent;  
+					position=position->parent->parent;   //进入下一轮的循环
 				}
 				else if(position==position->parent->right)      //case 2 要将其转换为case3
 				{
@@ -185,9 +200,130 @@ namespace DATE_BASE
 			}
 		}
 
-		root->COLOR=BLACK;  
+		root->COLOR=BLACK; //保持根为黑色
 	}
 
+	template<typename T>
+    typename RB_Tree<T>::_NodePtr RB_Tree<T>::tree_minnum(_NodePtr position) const
+    {
+    	if(position->left==nil)return position;
+    	return tree_minnum(position->left);
+    }
+
+
+	template<typename T>
+	typename RB_Tree<T>::_NodePtr RB_Tree<T>::RB_tree_successor(_NodePtr position) const
+	{
+		if(position->right!=nil)return tree_minnum(position->right);
+		while(position!=nil&&position==position->parent->right)position=position->parent;
+		return position;
+	}
+
+	template<typename T>
+	void RB_Tree<T>::tree_delete(_NodePtr position)
+	{
+		_NodePtr del_temp=nil;  //实际删除的节点
+		_NodePtr repl_temp=nil;
+		if(position->left==nil||position->right==nil)del_temp=position;
+		else
+		{
+			del_temp=RB_tree_successor(position);  //删掉其后继
+		}
+		if(del_temp->left!=nil)repl_temp=del_temp->left;
+		else
+			repl_temp=del_temp->right;
+		repl_temp->parent=del_temp->parent;     
+		if(del_temp->parent==nil)root=repl_temp;
+		else if(del_temp==del_temp->parent->left)del_temp->parent->left=repl_temp;
+		else if(del_temp==del_temp->parent->right)del_temp->parent->right=repl_temp;
+
+		if(del_temp!=position)
+			{
+				position->value=del_temp->value;
+				//position->COLOR=del_temp->COLOR;  //待确认？
+			}
+
+		//下面是颜色的维护
+		if(del_temp->COLOR==BLACK)
+		{
+			RB_delete_fixup(repl_temp);
+		}
+
+		//释放节点空间
+		destory_node(del_temp);
+
+	}
+
+	template<typename T>
+	void RB_Tree<T>::RB_delete_fixup(_NodePtr& position)
+	{
+		while(position!=root&&position->COLOR==BLACK) //只对position的color的颜色是black(双重黑色)的讨论，因为如果是red，则可以直接设置为black
+		{
+			if(position==position->parent->left)
+			{
+				_NodePtr bro=position->parent->right;
+				if(bro->COLOR==RED) //case 1,兄弟节点有两个黑色孩子
+				{
+					bro->COLOR=BLACK;
+					position->parent->COLOR=RED;
+					left_rotate(position->parent); //convert to case2/3/4
+					bro=position->parent->right;
+				}
+				if(bro->right->COLOR==BLACK&&bro->left->COLOR==BLACK) //case2,3个都是黑色的，那么position和bro都脱去黑色
+				{
+					bro->COLOR=RED;
+					position=position->parent;//相当于把那一层黑色转移到position的父节点了，不管其父节点是什么颜色，如果是红色，即为红黑，退出循环，如果是黑色，则是黑黑，继续循环，把这个黑色继续往上层移动
+					
+				}
+				else if(bro->right->COLOR==BLACK) //case 3,其左子的颜色是红色的，右子是黑色 convert to case 4
+				{
+					bro->left->COLOR=BLACK;
+					bro->COLOR=RED;
+					right_rotate(bro);
+					bro=position->parent->right;
+				}
+				//bro->right->COLOR=RED      case 4  //右孩子是红色的
+
+				bro->COLOR=position->parent->COLOR;
+				position->parent->COLOR=BLACK;
+				bro->right->COLOR=BLACK;
+				left_rotate(position->parent);
+				position=root;
+			}
+			else if(position==position->parent->right)//右孩子
+			{
+				 _NodePtr bro=position->parent->left;
+				 if(bro->COLOR==RED)  //想法是要维护性质5
+				 {
+				 	bro->COLOR=BLACK;
+				 	position->parent->COLOR=RED;
+				 	right_rotate(position->parent);
+				 	bro=position->parent->left;
+				 }
+				 if(bro->left->COLOR==BLACK&&bro->right->COLOR==BLACK)//case 2  bro->COLOR==BLACK
+				 {
+				 	bro->COLOR=RED;
+				 	position=position->parent;
+				 }
+				 else if(bro->left->COLOR==BLACK) //bro->right->COLOR=RED; case 3
+				 {
+				 	bro->right->COLOR=BLACK;
+				 	bro->COLOR=RED;
+				 	left_rotate(bro);
+				 	bro=position->parent->left;
+				 }
+				 //bro->left->COLOR==RED,bro->right->COLOR=RED   case 4
+				 bro->COLOR=position->parent->COLOR;  //交换兄弟节点的颜色和其父节点的颜色，兄弟节点颜色肯定是黑色的
+				 position->parent->COLOR=BLACK;
+				 bro->left->COLOR=BLACK;
+				 right_rotate(position->parent);
+				 position=root;
+			}
+		}
+
+		position->COLOR=BLACK;
+
+	}
 
 
 } //end of namespace
